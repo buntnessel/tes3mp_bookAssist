@@ -1,12 +1,8 @@
 --heavily modelled after Atkana's decoratorsAid ( https://github.com/Atkana/ )
--- inspired by BookRotate
--- maths taken from BookRotate ( Cydine & Maboroshi Daikon,  http://mw.modhistory.com/download-11-6953) 
--- and Hephs Book Rotation ( http://morrowind.heph.org/)
---28. Feb: uploading a first working version
 
 --list of execution:
 -- listen for OnObjectPlace (so, if a player is placing something)
--- check if placedobject is book (by comparing the books name to common refs from morrowind.esm, tamriel rebuilt and mw rebirth)
+-- check if placedobject is book
 -- if yes, save the book's UniqueID
 -- and then, after calculating which direction the player is facing, change the direction and height of the book
 -- by deleting the book the player placed and replacing it with a exact copy with different position & rotation values
@@ -99,31 +95,12 @@ if checkvariable == 1 then
 	local charge = object.charge or -1
 	local posX, posY, posZ = object.location.posX, object.location.posY, object.location.posZ
 	local rotX, rotY, rotZ = object.location.rotX, object.location.rotY, object.location.rotZ
-	local refIndex = refIndex
+	local refIndex = uid
 	
 	
-	for pid, pdata in pairs(Players) do
-		if Players[pid]:IsLoggedIn() then
-			--First, delete the original
-			tes3mp.InitializeEvent(pid)
-			tes3mp.SetEventCell(cell)
-			tes3mp.SetObjectRefNumIndex(0)
-			tes3mp.SetObjectMpNum(splitIndex[2])
-			tes3mp.AddWorldObject() --?
-			tes3mp.SendObjectDelete()
+				--implementation of the book rotate script
 			
-			--Now remake it
-			-- 360 degrees * 60 = 21600
-			-- x 21600, y 0, z 0 = straight north
-			-- x 0, y 21600, z 0 = points book down, useless
-			-- x 0, y 0, z 21600 = lays book flat on hte ground
-			
-			--implementation of the book rotate script
-			
-			
-			
-
-		 playerZ = tes3mp.GetRotZ(pid)
+			 playerZ = tes3mp.GetRotZ(pid)
 		 
 		 playerZ = math.deg(playerZ)
 		 
@@ -198,6 +175,23 @@ if checkvariable == 1 then
 			else
 			height = 13
 			end
+	
+	
+	for pid, pdata in pairs(Players) do
+		if Players[pid]:IsLoggedIn() then
+			--First, delete the original
+			tes3mp.InitializeEvent(pid)
+			tes3mp.SetEventCell(cell)
+			tes3mp.SetObjectRefNumIndex(0)
+			tes3mp.SetObjectMpNum(splitIndex[2])
+			tes3mp.AddWorldObject() --?
+			tes3mp.SendObjectDelete()
+			
+			--Now remake it
+			-- 360 degrees * 60 = 21600
+			-- x 21600, y 0, z 0 = straight north
+			-- x 0, y 21600, z 0 = points book down, useless
+			-- x 0, y 0, z 21600 = lays book flat on hte ground
 
 
 			--Now remake it
@@ -231,10 +225,16 @@ if checkvariable == 1 then
 		end
 	end
 	
-	LoadedCells[cell]:Save() --Not needed, but it's nice to do anyways
-
-	--potentially call gui again to continue placement
+	--for some reason, rotation and z values are not saved in the cell json
+	--so we do that manually and save right after
 	
+	LoadedCells[cell].data.objectData[uid].location.rotX = rotX
+	LoadedCells[cell].data.objectData[uid].location.rotY = rotY
+	LoadedCells[cell].data.objectData[uid].location.rotZ = rotZ
+	LoadedCells[cell].data.objectData[uid].location.posZ = posZ+height
+	
+	LoadedCells[cell]:Save() 
+
 
 
 	return objectsUpdate
