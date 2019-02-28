@@ -49,7 +49,7 @@ if checkvariable == 1 then
 	local cellId = tes3mp.GetCell(pid)
 	tes3mp.LogMessage(enumerations.log.INFO, "bookAssist listening in for: refid = " .. tes3mp.GetObjectRefId(0))
 	--check if object is a book
-	if ((string.match(tes3mp.GetObjectRefId(0), "bk_")) or (string.match(tes3mp.GetObjectRefId(0), "mr_book_")) or (string.match(tes3mp.GetObjectRefId(0), "T_Bk_"))) then
+	if ((string.match(tes3mp.GetObjectRefId(0), "bk_")) or (string.match(tes3mp.GetObjectRefId(0), "mr_book_")) or (string.match(tes3mp.GetObjectRefId(0), "T_Bk_")) or (string.match(tes3mp.GetObjectRefId(0), "book")) or (string.match(tes3mp.GetObjectRefId(0), "Book"))) then
 	--now begins the magic, calling the gui for the placement change and so on and so forth
 	
 	--construct and append the unique index of the book
