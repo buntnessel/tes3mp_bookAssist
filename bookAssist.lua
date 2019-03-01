@@ -1,10 +1,19 @@
---heavily modelled after Atkana's decoratorsAid ( https://github.com/Atkana/ )
+-- heavily modelled after Atkana's decoratorsAid ( https://github.com/Atkana/ )
+-- idea & placement calculations taken from Book Rotate by Cydine & Maboroshi Daikon and Hephs Book Rotate System (http://morrowind.heph.org/)
 
---list of execution:
+-- usage:
+-- bookAssist is automatically working when a player logs in; it can be turned off by:
+-- typing either /ba 0 or /bookassist 0 in the chat window. similarly, the height at which books get placed (standard is 14) can be set with
+-- /ba number , so: /ba 14 , or /ba 20 (for larger books, 14 does the trick for most)
+-- it won't place scrolls or open books properly, for this functionality you'll have to look towards the aforementioned Book Rotate. When placing such books I'd recommend turning
+-- bookAssist off by typing /ba 0 in chat.
+ 
+
+-- how the script works:
 -- listen for OnObjectPlace (so, if a player is placing something)
--- check if placedobject is book
--- if yes, save the book's UniqueID
--- and then, after calculating which direction the player is facing, change the direction and height of the book
+-- check if placedobject is book (stringcheck for common references that contain "book", "_Bk", and so on
+-- if yes, save the book's UniqueID to a custom variable attached to the player
+-- thena calculate which direction the player is facing and according to this, place the book with a N/W/S/E rotation
 -- by deleting the book the player placed and replacing it with a exact copy with different position & rotation values
 
 
@@ -37,7 +46,7 @@ end
 function bookAssist.OnObjectPlace (pid, cellDescription)
 --check if the functionality is on
 
-			checkvariable = tonumber(Players[pid].data.customVariables.bookAssistState)
+		local checkvariable = tonumber(Players[pid].data.customVariables.bookAssistState)
 			
 if checkvariable == 1 then
 
@@ -46,22 +55,17 @@ if checkvariable == 1 then
 	tes3mp.LogMessage(enumerations.log.INFO, "bookAssist listening in for: refid = " .. tes3mp.GetObjectRefId(0))
 	--check if object is a book
 	if ((string.match(tes3mp.GetObjectRefId(0), "bk_")) or (string.match(tes3mp.GetObjectRefId(0), "mr_book_")) or (string.match(tes3mp.GetObjectRefId(0), "T_Bk_")) or (string.match(tes3mp.GetObjectRefId(0), "book")) or (string.match(tes3mp.GetObjectRefId(0), "Book"))) then
-	--now begins the magic, calling the gui for the placement change and so on and so forth
-	
+
+
 	--construct and append the unique index of the book
 	bookUniqueIndex = tes3mp.GetObjectRefId(0) .. "-" .. tes3mp.GetObjectMpNum(0)
 	
-	--save the unique index for a short duration to a custom variable on the player
+	--save the unique index to a custom variable on the player
 	Players[pid].data.customVariables.bookAssistBook = bookUniqueIndex
 	Players[pid]:Save()
 	
 	selectedBookRef = tes3mp.GetObjectRefId(0)
 	selectedBookMpnum = tes3mp.GetObjectMpNum(0)
-	
-	--output rotation coordinates to console
-	
-	object = LoadedCells[cellId].data.objectData["0-"..selectedBookMpnum]
-	
 
 
 	bookAssist.objectsUpdate(pid)
@@ -74,13 +78,12 @@ end
 function bookAssist.objectsUpdate (pid)
 -- check if we're turned on
 	
-			checkvariable = tonumber(Players[pid].data.customVariables.bookAssistState)
+		local	checkvariable = tonumber(Players[pid].data.customVariables.bookAssistState)
 			
 if checkvariable == 1 then
 
-
 	--unique id reference: 0-127 , 0 for placed by the server, -127 is the mpnum. every object that's once picked up and placed by the player gets such an unique identifier, therefore when loading celldata
-	--we can simply take the first zero as a given. 
+	--we only care about this unique id
 	
 	local cell = tes3mp.GetCell(pid)
 	local splitIndex = Players[pid].data.customVariables.bookAssistBook:split("-")
@@ -88,7 +91,7 @@ if checkvariable == 1 then
 	tes3mp.LogMessage(enumerations.log.INFO, "bookAssist constructs the following unique identifier for it: " .. uid)
 	tes3mp.LogMessage(enumerations.log.INFO, "incidentially, bookAssits state is set to " .. Players[pid].data.customVariables.bookAssistState)
 	--load the object
-	object = LoadedCells[cell].data.objectData[uid]
+	local object = LoadedCells[cell].data.objectData[uid]
 	
 	local refId = object.refId
 	local count = object.count or 1
@@ -99,16 +102,16 @@ if checkvariable == 1 then
 	
 	
 				--implementation of the book rotate script
+				--tes3mp uses radians instead of degrees for positions and rotations
 			
-			 playerZ = tes3mp.GetRotZ(pid)
+			playerZ = tes3mp.GetRotZ(pid)
+			playerZ = math.deg(playerZ) 
 		 
-		 playerZ = math.deg(playerZ)
-		 
-		faceDirection = 0
+			faceDirection = 0
 
-		if playerZ < 0 then
+			if playerZ < 0 then
 			playerZ = 360 + playerZ
-		end
+			end
 
 --1	North	315 - 45
 --2	East	45 - 135
@@ -116,7 +119,7 @@ if checkvariable == 1 then
 --4	West	225 - 315
 
 		if playerZ >= 315 then
-		 faceDirection = 1
+			faceDirection = 1
 		end
 
 		if  playerZ <= 45 then
@@ -145,8 +148,7 @@ if checkvariable == 1 then
 		rotY = 0
 		rotZ = 0
 
-									-- VERTICAL
-			--adjust height
+				
 			if faceDirection == 1 then
 				rotY = 270
 				rotZ = 270
@@ -187,14 +189,8 @@ if checkvariable == 1 then
 			tes3mp.AddWorldObject() --?
 			tes3mp.SendObjectDelete()
 			
-			--Now remake it
-			-- 360 degrees * 60 = 21600
-			-- x 21600, y 0, z 0 = straight north
-			-- x 0, y 21600, z 0 = points book down, useless
-			-- x 0, y 0, z 21600 = lays book flat on hte ground
 
-
-			--Now remake it
+			--Now remake it and send the information to the online players
 			tes3mp.InitializeEvent(pid)
 			tes3mp.SetEventCell(cell)
 			tes3mp.SetObjectRefId(refId)
@@ -225,16 +221,14 @@ if checkvariable == 1 then
 		end
 	end
 	
-	--for some reason, rotation and z values are not saved in the cell json
-	--so we do that manually and save right after
-	
+	-- save rotation and z values in the cell json
+
 	LoadedCells[cell].data.objectData[uid].location.rotX = rotX
 	LoadedCells[cell].data.objectData[uid].location.rotY = rotY
 	LoadedCells[cell].data.objectData[uid].location.rotZ = rotZ
 	LoadedCells[cell].data.objectData[uid].location.posZ = posZ+height
 	
 	LoadedCells[cell]:Save() 
-
 
 
 	return objectsUpdate
