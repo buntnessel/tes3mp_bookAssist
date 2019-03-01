@@ -1,21 +1,47 @@
+--[[ 
 -- heavily modelled after Atkana's decoratorsAid ( https://github.com/Atkana/ )
--- idea & placement calculations taken from Book Rotate by Cydine & Maboroshi Daikon and Hephs Book Rotate System (http://morrowind.heph.org/)
+-- idea & placement calculations taken from Book Rotate by Cydine & Maboroshi Daikon ( http://mw.modhistory.com/download-11-6953) and Hephs Book Rotate System (http://morrowind.heph.org/)
+-- author: Buntnessel / Falas on TES3MP discord 
+
+-- functionality:
+like a very lightweight BookRotate, this script places books vertically upright facing one of the 4 cardinal directions depending on the players angle when placing the book.
+it basically allows you to put most books on a shelf neatly.
 
 -- usage:
--- bookAssist is automatically working when a player logs in; it can be turned off by:
--- typing either /ba 0 or /bookassist 0 in the chat window. similarly, the height at which books get placed (standard is 14) can be set with
--- /ba number , so: /ba 14 , or /ba 20 (for larger books, 14 does the trick for most)
--- it won't place scrolls or open books properly, for this functionality you'll have to look towards the aforementioned Book Rotate. When placing such books I'd recommend turning
--- bookAssist off by typing /ba 0 in chat.
+set a height value for bookAssist to get it working; I'd recommend 14. meaning: type /ba 14 in chat. This height offsets the problem that books get placed in the middle of shelfs instead of on them.  
+--14 height works for most books, larger ones can require 20 or 21.
+typing either /ba 0 or /bookassist 0 in the chat window will turn it off again.
+it won't place scrolls or open books properly, for this functionality you'll have to look towards the aforementioned Book Rotate. When placing such books I'd recommend turning
+bookAssist off by typing /ba 0 in chat.
  
 
 -- how the script works:
--- listen for OnObjectPlace (so, if a player is placing something)
--- check if placedobject is book (stringcheck for common references that contain "book", "_Bk", and so on
--- if yes, save the book's UniqueID to a custom variable attached to the player
--- thena calculate which direction the player is facing and according to this, place the book with a N/W/S/E rotation
--- by deleting the book the player placed and replacing it with a exact copy with different position & rotation values
+listen for OnObjectPlace (so, if a player is placing something)
+check if placedobject is book (stringcheck for common references that contain "book", "_Bk", and so on
+if yes, save the book's UniqueID to a custom variable attached to the player
+thena calculate which direction the player is facing and according to this, place the book with a N/W/S/E rotation
+by deleting the book the player placed and replacing it with a exact copy with different position & rotation values
 
+
+installation:
+ - place this file (bookAssist.lua) in your servers /mpstuff/scripts directory 
+ - in /mpbstuff/scripts/serverCore.lua ,in a new line,  add:  bookAssist = require("bookAssist") (somewhere in the beginning (e.g. above require("color"), around line 10 )
+ - also in /mpstuff/scripts/serverCore.lua , within the OnObjectPlace function, add: bookAssist.OnObjectPlace(pid, cellDescription) (e.g. below eventHandler.OnObjectPlace(pid, cellDescription) and above end, around line 537)
+ 
+ - in mpstuff/scripts/commandHandler.lua add: 	
+	
+	--bookAssist insert
+		elseif  (cmd[1] == "bookassist" or cmd[1] == "ba") then
+		targetHeight = tonumber(cmd[2])
+		bookAssist.OnCommand(pid, targetHeight) 	 
+
+		
+		to the elseif chain of the commandHandler.ProcessCommand function
+	I'd suggest adding it before the last else statement, which ought to be around line 1095	
+	
+	
+	
+]]
 
 local bookAssist = {}
 
